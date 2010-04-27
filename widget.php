@@ -4,10 +4,15 @@ Plugin Name: Multi Twitter Stream
 Plugin URI: http://thinkclay.com/
 Description: A widget for multiple twitter accounts
 Author: Clayton McIlrath
-Version: 1.0.1
+Version: 1.1.0
 Author URI: http://thinkclay.com
 */
-
+ 
+/*
+TODO:
+- Make installer that will create directories needed and set permissions
+- Enable/Disable sort from widget settings
+*/
 function TimeAgo($datefrom,$dateto=-1){
 	// Defaults and assume if 0 is passed in that its an error rather than the epoch
 	if($datefrom<=0) { return "A long time ago"; }
@@ -93,67 +98,81 @@ function TimeAgo($datefrom,$dateto=-1){
 	return $res;
 } // end TimeAgo()
 
-function checkCache($account){
-	$cache = FALSE; // Assume the cache is empty
-	$cFile = "./cache/twitter/$account.xml";
 
-	if(file_exists($cFile)) {
-		$modtime = filemtime($cFile);		
-		$timeago = time() - 1800; // 30 minutes ago
-		if($modtime < $timeago) {
-			$cache = FALSE; // Set to false just in case as the cache needs to be renewed
-		} else {
-			$cache = TRUE; // The cache is not too old so the cache can be used.
-		}
-	}
+function feedSort($a, $b){
+	$a_t = strtotime($a->status->created_at);
+	$b_t = strtotime($b->status->created_at);
 	
-	if($cache === FALSE) {				
-		// curl the account via XML to get the last tweet and user data
-		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_URL, "http://twitter.com/users/$account.xml");
-		curl_setopt($ch, CURLOPT_HEADER, 0);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-		$content = curl_exec($ch);
-		curl_close($ch);
-		
-		// Createa an XML object from curl'ed content
-		$xml = new SimpleXMLElement($content);
-		
-		if($content === FALSE) {
-			// Content couldn't be retrieved... Do something..
-			echo '<li>Content could not be retrieved. Twitter API failed...</li>';
-		}
-	
-		// Let's save our data into webroot/cache/twitter/
-		$fp = fopen($cFile, 'w');
-		if(!$fp){ echo 'Permission to write cache dir not granted'; } 
-		else { fwrite($fp, $content); }
-		fclose($fp);
-	} else {
-		//cache is TRUE let's load the data from the cached file
-		echo '<!--li>We have cache! Loading from local file...</li-->';
-		$xml = simplexml_load_file($cFile);
-	}
-
-	echo '
-		<li class="clearfix">
-			<a href="http://twitter.com/'.$xml->screen_name.'">
-				<img class="twitter-avatar" src="'.$xml->profile_image_url.'" width="40" height="40" alt="'.$xml->screen_name.'" />
-				'.$xml->screen_name.': 
-			</a>
-			'.$xml->status->text.'<br />
-			<em>'.TimeAgo(strtotime($xml->status->created_at)).'</em>
-		</li>
-	';
-} // end: checkCache()
+	if( $a_t == $b_t ) return 0 ;
+    return ($a_t > $b_t ) ? -1 : 1; 
+}
 
 function multiTwitter($accounts) {
 	$accounts = explode(" ", $accounts);
-
+	
 	echo '<ul>';
-	foreach($accounts as $account){
-		checkCache($account);
-	}
+	// Create our $feeds array and CRUD cache
+	foreach($accounts as $account):
+		$cache = FALSE; // Assume the cache is empty
+		$cFile = "./cache/twitter/$account.xml";
+	
+		if(file_exists($cFile)) {
+			$modtime = filemtime($cFile);		
+			$timeago = time() - 1800; // 30 minutes ago
+			if($modtime < $timeago) {
+				$cache = FALSE; // Set to false just in case as the cache needs to be renewed
+			} else {
+				$cache = TRUE; // The cache is not too old so the cache can be used.
+			}
+		}
+		
+		if($cache === FALSE) {				
+			// curl the account via XML to get the last tweet and user data
+			$ch = curl_init();
+			curl_setopt($ch, CURLOPT_URL, "http://twitter.com/users/$account.xml");
+			curl_setopt($ch, CURLOPT_HEADER, 0);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+			$content = curl_exec($ch);
+			curl_close($ch);
+			
+			// Createa an XML object from curl'ed content
+			$xml = new SimpleXMLElement($content);
+			$feeds[] = $xml;
+			
+			if($content === FALSE) {
+				// Content couldn't be retrieved... Do something..
+				echo '<li>Content could not be retrieved. Twitter API failed...</li>';
+			}
+		
+			// Let's save our data into webroot/cache/twitter/
+			$fp = fopen($cFile, 'w');
+			if(!$fp){ echo 'Permission to write cache dir not granted'; } 
+			else { fwrite($fp, $content); }
+			fclose($fp);
+		} else {
+			//cache is TRUE let's load the data from the cached file
+			echo '<!--li>We have cache! Loading from local file...</li-->';
+			$xml = simplexml_load_file($cFile);
+			$feeds[] = $xml;
+		}
+	endforeach;
+	
+	// Sort our $feeds array
+	usort($feeds, "feedSort");
+	
+	// Split array and output results
+	foreach($feeds as $feed):
+		echo '
+			<li class="clearfix">
+				<a href="http://twitter.com/'.$feed->screen_name.'">
+					<img class="twitter-avatar" src="'.$feed->profile_image_url.'" width="40" height="40" alt="'.$feed->screen_name.'" />
+					'.$feed->screen_name.': 
+				</a>
+				'.$feed->status->text.'<br />
+				<em>'.TimeAgo(strtotime($feed->status->created_at)).'</em>
+			</li>
+		';
+	endforeach;
 	echo '</ul>';
 }
 
