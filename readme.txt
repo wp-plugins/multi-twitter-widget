@@ -20,6 +20,7 @@ from each user. So that's what this plugin does.
 
 1.0.1	Re-arranged files get plugin working properly
 1.1.0	Added chronological sorting for feeds
+1.2.0	Added option on widget to limit feed
 
 == Installation ==
 

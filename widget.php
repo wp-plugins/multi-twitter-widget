@@ -4,14 +4,13 @@ Plugin Name: Multi Twitter Stream
 Plugin URI: http://thinkclay.com/
 Description: A widget for multiple twitter accounts
 Author: Clayton McIlrath
-Version: 1.1.0
+Version: 1.2.0
 Author URI: http://thinkclay.com
 */
  
 /*
 TODO:
 - Make installer that will create directories needed and set permissions
-- Enable/Disable sort from widget settings
 */
 function TimeAgo($datefrom,$dateto=-1){
 	// Defaults and assume if 0 is passed in that its an error rather than the epoch
@@ -107,8 +106,9 @@ function feedSort($a, $b){
     return ($a_t > $b_t ) ? -1 : 1; 
 }
 
-function multiTwitter($accounts) {
+function multiTwitter($accounts, $limit) {
 	$accounts = explode(" ", $accounts);
+	if(!$limit){ $limit = 10; } // if limit hasn't been set, default to 10
 	
 	echo '<ul>';
 	// Create our $feeds array and CRUD cache
@@ -161,7 +161,9 @@ function multiTwitter($accounts) {
 	usort($feeds, "feedSort");
 	
 	// Split array and output results
+	$i = 1;
 	foreach($feeds as $feed):
+	if($feed->screen_name != '' && $i <= $limit):
 		echo '
 			<li class="clearfix">
 				<a href="http://twitter.com/'.$feed->screen_name.'">
@@ -172,6 +174,8 @@ function multiTwitter($accounts) {
 				<em>'.TimeAgo(strtotime($feed->status->created_at)).'</em>
 			</li>
 		';
+	endif;
+	$i++;
 	endforeach;
 	echo '</ul>';
 }
@@ -184,7 +188,8 @@ function widget_multiTwitter($args) {
 	if (!is_array($options)) { 
 		$options = array(
 			'title' => 'Multi Twitter',
-			'users' => 'thinkclay bychosen'
+			'users' => 'thinkclay bychosen',
+			'limit' => 10
 		);  
 	}   
 
@@ -193,7 +198,7 @@ function widget_multiTwitter($args) {
     echo $options['title'];
 	echo $after_title;
 
-	multiTwitter($options['users']);
+	multiTwitter($options['users'], $options['limit']);
 	
 	echo $after_widget;
 }
@@ -204,24 +209,30 @@ function multiTwitter_control() {
 	if (!is_array($options)) { 
 		$options = array(
 			'title' => 'Multi Twitter',
-			'users' => 'thinkclay bychosen'
+			'users' => 'thinkclay bychosen',
+			'limit' => 10
 		); 
 	}  
 
 	if ($_POST['multiTwitter-Submit']) {
 		$options['title'] = htmlspecialchars($_POST['multiTwitter-Title']);
 		$options['users'] = htmlspecialchars($_POST['multiTwitter-Users']);
+		$options['limit'] = htmlspecialchars($_POST['multiTwitter-Limit']);
 		update_option("widget_multiTwitter", $options);
 	}
 ?>
 	<p>
 		<label for="multiTwitter-WidgetTitle">Widget Title: </label><br />
-		<input type="text" class="widefat" id="multiTwitter-Title" name="multiTwitter-Title" value="<?php echo $options['title'];?>" />
+		<input type="text" class="widefat" id="multiTwitter-Title" name="multiTwitter-Title" value="<?php echo $options['title']; ?>" />
 	</p>
 	<p>	
 		<label for="multiTwitter-WidgetUsers">Users: </label><br />
-		<input type="text" class="widefat" id="multiTwitter-Users" name="multiTwitter-Users" value="<?php echo $options['users'];?>" /><br />
+		<input type="text" class="widefat" id="multiTwitter-Users" name="multiTwitter-Users" value="<?php echo $options['users']; ?>" /><br />
 		<small><em>enter accounts separated with a space</em></small>
+	</p>
+	<p>
+		<label for="multiTwitter-WidgetLimit">Limit: </label><br />
+		<input type="text" class="widefat" id="multiTwitter-Limit" name="multiTwitter-Limit" value="<?php echo $options['limit']; ?>" /><br />
 	</p>
 	<p><input type="hidden" id="multiTwitter-Submit" name="multiTwitter-Submit" value="1" /></p>
 <?php
