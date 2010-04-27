@@ -4,7 +4,7 @@ Plugin Name: Multi Twitter Stream
 Plugin URI: http://thinkclay.com/
 Description: A widget for multiple twitter accounts
 Author: Clayton McIlrath
-Version: 1.0
+Version: 1.0.1
 Author URI: http://thinkclay.com
 */
 

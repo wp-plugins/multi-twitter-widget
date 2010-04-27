@@ -16,6 +16,10 @@ usually show the tweets of the users in chronological order. This means if USER 
 your whole feed might be all about USER A. I found in many cases that I'd rather pull in the most recent tweet
 from each user. So that's what this plugin does.
 
+CHANGELOG
+
+1.0.1	Re-arranged files get plugin working properly
+
 == Installation ==
 
 Estimated Time: 5 minutes
