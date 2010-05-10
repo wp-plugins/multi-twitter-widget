@@ -16,11 +16,13 @@ usually show the tweets of the users in chronological order. This means if USER 
 your whole feed might be all about USER A. I found in many cases that I'd rather pull in the most recent tweet
 from each user. So that's what this plugin does.
 
+
 **CHANGELOG**
 
 1.0.1	Re-arranged files get plugin working properly
 1.1.0	Added chronological sorting for feeds
 1.2.0	Added option on widget to limit feed
+1.2.5	Added options in the widget settings to link #hashtags and @replies.
 
 == Installation ==
 

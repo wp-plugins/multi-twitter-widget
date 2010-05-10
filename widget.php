@@ -4,13 +4,15 @@ Plugin Name: Multi Twitter Stream
 Plugin URI: http://thinkclay.com/
 Description: A widget for multiple twitter accounts
 Author: Clayton McIlrath
-Version: 1.2.0
+Version: 1.2.5
 Author URI: http://thinkclay.com
 */
  
 /*
 TODO:
 - Make installer that will create directories needed and set permissions
+- Link hyperlinks in formatTwitter()
+- Options for order arrangement (chrono, alpha, etc)
 */
 function TimeAgo($datefrom,$dateto=-1){
 	// Defaults and assume if 0 is passed in that its an error rather than the epoch
@@ -98,6 +100,19 @@ function TimeAgo($datefrom,$dateto=-1){
 } // end TimeAgo()
 
 
+
+function formatTweet($tweet, $options) {
+	if($options['reply']){
+	    $tweet = preg_replace('/(^|\s)@(\w+)/', '\1@<a href="http://www.twitter.com/\2">\2</a>', $tweet);
+	}
+	if($options['hash']){
+	    $tweet = preg_replace('/(^|\s)#(\w+)/', '\1#<a href="http://search.twitter.com/search?q=%23\2">\2</a>', $tweet);
+	}
+	
+	return $tweet;
+}
+
+	
 function feedSort($a, $b){
 	$a_t = strtotime($a->status->created_at);
 	$b_t = strtotime($b->status->created_at);
@@ -106,9 +121,10 @@ function feedSort($a, $b){
     return ($a_t > $b_t ) ? -1 : 1; 
 }
 
-function multiTwitter($accounts, $limit) {
-	$accounts = explode(" ", $accounts);
-	if(!$limit){ $limit = 10; } // if limit hasn't been set, default to 10
+function multiTwitter($widget) {
+	$accounts = explode(" ", $widget['users']);
+	
+	if(!$widget['limit']){ $widget['limit'] = 10; } // if limit hasn't been set, default to 10
 	
 	echo '<ul>';
 	// Create our $feeds array and CRUD cache
@@ -163,14 +179,14 @@ function multiTwitter($accounts, $limit) {
 	// Split array and output results
 	$i = 1;
 	foreach($feeds as $feed):
-	if($feed->screen_name != '' && $i <= $limit):
+	if($feed->screen_name != '' && $i <= $widget['limit']):
 		echo '
 			<li class="clearfix">
 				<a href="http://twitter.com/'.$feed->screen_name.'">
 					<img class="twitter-avatar" src="'.$feed->profile_image_url.'" width="40" height="40" alt="'.$feed->screen_name.'" />
 					'.$feed->screen_name.': 
 				</a>
-				'.$feed->status->text.'<br />
+				'.formatTweet($feed->status->text, $widget).'<br />
 				<em>'.TimeAgo(strtotime($feed->status->created_at)).'</em>
 			</li>
 		';
@@ -189,16 +205,19 @@ function widget_multiTwitter($args) {
 		$options = array(
 			'title' => 'Multi Twitter',
 			'users' => 'thinkclay bychosen',
-			'limit' => 10
+			'limit' => 10,
+			'links' => TRUE,
+			'reply' => TRUE,
+			'hash'	=> TRUE
 		);  
-	}   
+	}  
 
 	echo $before_widget;
 	echo $before_title;
     echo $options['title'];
 	echo $after_title;
 
-	multiTwitter($options['users'], $options['limit']);
+	multiTwitter($options);
 	
 	echo $after_widget;
 }
@@ -210,7 +229,10 @@ function multiTwitter_control() {
 		$options = array(
 			'title' => 'Multi Twitter',
 			'users' => 'thinkclay bychosen',
-			'limit' => 10
+			'limit' => 10,
+			'links' => TRUE,
+			'reply' => TRUE,
+			'hash'	=> TRUE
 		); 
 	}  
 
@@ -218,6 +240,9 @@ function multiTwitter_control() {
 		$options['title'] = htmlspecialchars($_POST['multiTwitter-Title']);
 		$options['users'] = htmlspecialchars($_POST['multiTwitter-Users']);
 		$options['limit'] = htmlspecialchars($_POST['multiTwitter-Limit']);
+		$options['links'] = $_POST['multiTwitter-Links'];
+		$options['reply'] = $_POST['multiTwitter-Reply'];
+		$options['hash']  = $_POST['multiTwitter-Hash'];
 		update_option("widget_multiTwitter", $options);
 	}
 ?>
@@ -231,8 +256,28 @@ function multiTwitter_control() {
 		<small><em>enter accounts separated with a space</em></small>
 	</p>
 	<p>
-		<label for="multiTwitter-WidgetLimit">Limit: </label><br />
-		<input type="text" class="widefat" id="multiTwitter-Limit" name="multiTwitter-Limit" value="<?php echo $options['limit']; ?>" /><br />
+		<label for="multiTwitter-WidgetLimit">Limit total feed to: </label>
+		<select id="multiTwitter-Limit" name="multiTwitter-Limit">
+			<option value="<?php echo $options['limit']; ?>"><?php echo $options['limit']; ?></option>
+			<option value="1">1</option>
+			<option value="2">2</option>
+			<option value="3">3</option>
+			<option value="4">4</option>
+			<option value="5">5</option>
+			<option value="10">10</option>
+		</select>
+	</p>
+	<p>
+		<label for="multiTwitter-Links">Automatically convert links?</label>
+		<input type="checkbox" name="multiTwitter-Links" id="multiTwitter-Links" <?php if($options['links']){ echo 'checked="checked"'; } ?> />
+	</p>
+	<p>
+		<label for="multiTwitter-Reply">Automatically convert @replies?</label>
+		<input type="checkbox" name="multiTwitter-Reply" id="multiTwitter-Reply" <?php if($options['reply']){ echo 'checked="checked"'; } ?> />
+	</p>
+	<p>
+		<label for="multiTwitter-Hash">Automatically convert #hashtags?</label>
+		<input type="checkbox" name="multiTwitter-Hash" id="multiTwitter-Hash" <?php if($options['hash']){ echo 'checked="checked"'; } ?> />
 	</p>
 	<p><input type="hidden" id="multiTwitter-Submit" name="multiTwitter-Submit" value="1" /></p>
 <?php
