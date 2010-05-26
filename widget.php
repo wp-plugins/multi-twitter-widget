@@ -4,13 +4,12 @@ Plugin Name: Multi Twitter Stream
 Plugin URI: http://thinkclay.com/
 Description: A widget for multiple twitter accounts
 Author: Clayton McIlrath
-Version: 1.2.5
+Version: 1.3.0
 Author URI: http://thinkclay.com
 */
  
 /*
 TODO:
-- Make installer that will create directories needed and set permissions
 - Link hyperlinks in formatTwitter()
 - Options for order arrangement (chrono, alpha, etc)
 */
@@ -114,23 +113,33 @@ function formatTweet($tweet, $options) {
 
 	
 function feedSort($a, $b){
-	$a_t = strtotime($a->status->created_at);
-	$b_t = strtotime($b->status->created_at);
+	if($a->status->created_at){
+		$a_t = strtotime($a->status->created_at);
+		$b_t = strtotime($b->status->created_at);
+	}
+	elseif($a->updated){
+		$a_t = strtotime($a->updated);
+		$b_t = strtotime($b->updated);
+	}
 	
 	if( $a_t == $b_t ) return 0 ;
     return ($a_t > $b_t ) ? -1 : 1; 
 }
 
 function multiTwitter($widget) {
+	if(!file_exists('cache/twitter')){ mkdir('cache/twitter'); }
 	$accounts = explode(" ", $widget['users']);
+	$terms = explode(", ", $widget['terms']);
 	
-	if(!$widget['limit']){ $widget['limit'] = 10; } // if limit hasn't been set, default to 10
+	if(!$widget['user_limit']){ $widget['user_limit'] = 5; } // if limit hasn't been set, default to 10
+	if(!$widget['term_limit']){ $widget['term_limit'] = 5; } // if limit hasn't been set, default to 10
 	
 	echo '<ul>';
-	// Create our $feeds array and CRUD cache
+		
+	// Parse the accounts and CRUD cache
 	foreach($accounts as $account):
 		$cache = FALSE; // Assume the cache is empty
-		$cFile = "./cache/twitter/$account.xml";
+		$cFile = "cache/twitter/users_$account.xml";
 	
 		if(file_exists($cFile)) {
 			$modtime = filemtime($cFile);		
@@ -173,13 +182,59 @@ function multiTwitter($widget) {
 		}
 	endforeach;
 	
+	// Parse the terms and CRUD cache
+	foreach($terms as $term):
+		$cache = FALSE; // Assume the cache is empty
+		$cFile = "cache/twitter/search_$term.xml";
+	
+		if(file_exists($cFile)) {
+			$modtime = filemtime($cFile);		
+			$timeago = time() - 1800; // 30 minutes ago
+			if($modtime < $timeago) {
+				$cache = FALSE; // Set to false just in case as the cache needs to be renewed
+			} else {
+				$cache = TRUE; // The cache is not too old so the cache can be used.
+			}
+		}
+		
+		if($cache === FALSE) {				
+			// curl the account via XML to get the last tweet and user data
+			$ch = curl_init();
+			curl_setopt($ch, CURLOPT_URL, "http://search.twitter.com/search.atom?q=$term");
+			curl_setopt($ch, CURLOPT_HEADER, 0);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+			$content = curl_exec($ch);
+			curl_close($ch);
+			
+			// Createa an XML object from curl'ed content
+			$xml = new SimpleXMLElement($content);
+			$feeds[] = $xml;
+			
+			if($content === FALSE) {
+				// Content couldn't be retrieved... Do something..
+				echo '<li>Content could not be retrieved. Twitter API failed...</li>';
+			}
+		
+			// Let's save our data into webroot/cache/twitter/
+			$fp = fopen($cFile, 'w');
+			if(!$fp){ echo 'Permission to write cache dir not granted'; } 
+			else { fwrite($fp, $content); }
+			fclose($fp);
+		} else {
+			//cache is TRUE let's load the data from the cached file
+			echo '<!--li>We have cache! Loading from local file...</li-->';
+			$xml = simplexml_load_file($cFile);
+			$feeds[] = $xml;
+		}
+	endforeach;
+	
 	// Sort our $feeds array
 	usort($feeds, "feedSort");
 	
 	// Split array and output results
 	$i = 1;
 	foreach($feeds as $feed):
-	if($feed->screen_name != '' && $i <= $widget['limit']):
+	if($feed->screen_name != '' && $i <= $widget['user_limit']):
 		echo '
 			<li class="clearfix">
 				<a href="http://twitter.com/'.$feed->screen_name.'">
@@ -190,7 +245,24 @@ function multiTwitter($widget) {
 				<em>'.TimeAgo(strtotime($feed->status->created_at)).'</em>
 			</li>
 		';
-	endif;
+	elseif(preg_match('/search.twitter.com/i', $feed->id)):		
+		$count = count($feed->entry);
+		
+		for($i=0; $i<$count; $i++){
+		if($i <= $widget['term_limit']):
+			echo '
+				<li class="clearfix">
+					<a href="'.$feed->entry[$i]->author->uri.'">
+						<img class="twitter-avatar" src="'.$feed->entry[$i]->link[1]->attributes()->href.'" width="40" height="40" alt="'.$feed->entry[$i]->author->name.'" />
+						<strong>'.$feed->entry[$i]->author->name.':</strong>
+					</a>
+					'.formatTweet($feed->entry[$i]->content, $widget).'<br />
+					<em>'.TimeAgo(strtotime($feed->entry[$i]->updated)).'</em>
+				</li>
+			';
+		endif;	
+		}
+	endif;	
 	$i++;
 	endforeach;
 	echo '</ul>';
@@ -205,7 +277,9 @@ function widget_multiTwitter($args) {
 		$options = array(
 			'title' => 'Multi Twitter',
 			'users' => 'thinkclay bychosen',
-			'limit' => 10,
+			'terms' => 'wordpress',
+			'user_limit' => 5,
+			'term_limit' => 5,
 			'links' => TRUE,
 			'reply' => TRUE,
 			'hash'	=> TRUE
@@ -229,7 +303,9 @@ function multiTwitter_control() {
 		$options = array(
 			'title' => 'Multi Twitter',
 			'users' => 'thinkclay bychosen',
-			'limit' => 10,
+			'terms' => 'wordpress',
+			'user_limit' => 5,
+			'term_limit' => 5,
 			'links' => TRUE,
 			'reply' => TRUE,
 			'hash'	=> TRUE
@@ -239,7 +315,9 @@ function multiTwitter_control() {
 	if ($_POST['multiTwitter-Submit']) {
 		$options['title'] = htmlspecialchars($_POST['multiTwitter-Title']);
 		$options['users'] = htmlspecialchars($_POST['multiTwitter-Users']);
-		$options['limit'] = htmlspecialchars($_POST['multiTwitter-Limit']);
+		$options['terms'] = htmlspecialchars($_POST['multiTwitter-Terms']);
+		$options['user_limit'] = $_POST['multiTwitter-UserLimit'];
+		$options['term_limit'] = $_POST['multiTwitter-TermLimit'];
 		$options['links'] = $_POST['multiTwitter-Links'];
 		$options['reply'] = $_POST['multiTwitter-Reply'];
 		$options['hash']  = $_POST['multiTwitter-Hash'];
@@ -247,23 +325,48 @@ function multiTwitter_control() {
 	}
 ?>
 	<p>
-		<label for="multiTwitter-WidgetTitle">Widget Title: </label><br />
+		<label for="multiTwitter-Title">Widget Title: </label><br />
 		<input type="text" class="widefat" id="multiTwitter-Title" name="multiTwitter-Title" value="<?php echo $options['title']; ?>" />
 	</p>
 	<p>	
-		<label for="multiTwitter-WidgetUsers">Users: </label><br />
+		<label for="multiTwitter-Users">Users: </label><br />
 		<input type="text" class="widefat" id="multiTwitter-Users" name="multiTwitter-Users" value="<?php echo $options['users']; ?>" /><br />
 		<small><em>enter accounts separated with a space</em></small>
 	</p>
 	<p>
-		<label for="multiTwitter-WidgetLimit">Limit total feed to: </label>
-		<select id="multiTwitter-Limit" name="multiTwitter-Limit">
-			<option value="<?php echo $options['limit']; ?>"><?php echo $options['limit']; ?></option>
+		<label for="multiTwitter-Terms">Search Terms: </label><br />
+		<input type="text" class="widefat" id="multiTwitter-Terms" name="multiTwitter-Terms" value="<?php echo $options['terms']; ?>" /><br />
+		<small><em>enter search terms separated with a comma</em></small>
+	</p>
+	<p>
+		<label for="multiTwitter-UserLimit">Limit user feed to: </label>
+		<select id="multiTwitter-UserLimit" name="multiTwitter-UserLimit">
+			<option value="<?php echo $options['user_limit']; ?>"><?php echo $options['user_limit']; ?></option>
 			<option value="1">1</option>
 			<option value="2">2</option>
 			<option value="3">3</option>
 			<option value="4">4</option>
 			<option value="5">5</option>
+			<option value="6">6</option>
+			<option value="7">7</option>
+			<option value="8">8</option>
+			<option value="9">9</option>
+			<option value="10">10</option>
+		</select>
+	</p>
+	<p>
+		<label for="multiTwitter-TermLimit">Limit search feed to: </label>
+		<select id="multiTwitter-TermLimit" name="multiTwitter-TermLimit">
+			<option value="<?php echo $options['term_limit']; ?>"><?php echo $options['term_limit']; ?></option>
+			<option value="1">1</option>
+			<option value="2">2</option>
+			<option value="3">3</option>
+			<option value="4">4</option>
+			<option value="5">5</option>
+			<option value="6">6</option>
+			<option value="7">7</option>
+			<option value="8">8</option>
+			<option value="9">9</option>
 			<option value="10">10</option>
 		</select>
 	</p>
@@ -285,7 +388,7 @@ function multiTwitter_control() {
 
 function multiTwitter_init() {
 	register_sidebar_widget('Multi Twitter', 'widget_multiTwitter');
-	register_widget_control('Multi Twitter', 'multiTwitter_control', 250, 250);
+	register_widget_control('Multi Twitter', 'multiTwitter_control', 250, 250);	
 }
 
 add_action("plugins_loaded", "multiTwitter_init");
