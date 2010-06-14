@@ -2,8 +2,8 @@
 Contributors: clay.mcilrath
 Donate link: http://thinkclay.com/
 Tags: widgets, twitter, multi twitter, multiple twitter, twitter account
-Requires at least: 2.1
-Tested up to: 2.9
+Requires at least: 2.8
+Tested up to: 3.0
 Stable tag: trunk
 
 A simple widget that displays only the most recent tweet from multiple accounts.
@@ -24,6 +24,7 @@ from each user. So that's what this plugin does.
 1.2.0	Added option on widget to limit feed
 1.2.5	Added options in the widget settings to link #hashtags and @replies.
 1.3.0	Added options for search terms in addition to accounts
+1.3.1	Updated to support 3.0
 
 == Installation ==
 
