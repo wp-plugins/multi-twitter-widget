@@ -4,7 +4,7 @@ Plugin Name: Multi Twitter Stream
 Plugin URI: http://thinkclay.com/
 Description: A widget for multiple twitter accounts
 Author: Clayton McIlrath
-Version: 1.3.1
+Version: 1.3.2
 Author URI: http://thinkclay.com
 */
  
@@ -387,8 +387,8 @@ function multiTwitter_control() {
 }
 
 function multiTwitter_init() {
-	wp_register_sidebar_widget('widget_multiTwitter_register', 'Multi Twitter', 'widget_multiTwitter');
-	wp_register_widget_control('widget_multiTwitter_control', 'Multi Twitter', 'multiTwitter_control', 250, 250);	
+	register_sidebar_widget('Multi Twitter', 'widget_multiTwitter');
+	register_widget_control('Multi Twitter', 'multiTwitter_control', 250, 250);	
 }
 
 add_action("plugins_loaded", "multiTwitter_init");

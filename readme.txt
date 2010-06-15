@@ -25,6 +25,7 @@ from each user. So that's what this plugin does.
 1.2.5	Added options in the widget settings to link #hashtags and @replies.
 1.3.0	Added options for search terms in addition to accounts
 1.3.1	Updated to support 3.0
+1.2.2	Using 2.8 deprecated tags due to lack of documentation
 
 == Installation ==
 
