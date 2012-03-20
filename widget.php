@@ -4,7 +4,7 @@ Plugin Name: Multi Twitter Stream
 Plugin URI: http://thinkclay.com/
 Description: A widget for multiple twitter accounts
 Author: Clayton McIlrath
-Version: 1.4.0
+Version: 1.4.1
 Author URI: http://thinkclay.com
 */
  
@@ -349,7 +349,10 @@ function multiTwitter($widget)
 	
 	if ( $widget['credits'] === true )
 	{
-		$output .= '<hr /><strong>powered by</strong> <a href="http://incbrite.com" target="_blank">Incbrite Wordpress Plugins</a>';
+		$output .= 
+			'<hr />'.
+			'<strong>powered by</strong> '.
+			'<a href="http://incbrite.com/services/wordpress-plugins" target="_blank">Incbrite Wordpress Plugins</a>';
 	}
 	
 	if ( $widget['styles'] === true )
