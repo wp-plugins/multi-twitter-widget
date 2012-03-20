@@ -3,7 +3,7 @@ Contributors: clay.mcilrath
 Donate link: http://thinkclay.com/
 Tags: widgets, twitter, multi twitter, multiple twitter, twitter account
 Requires at least: 2.8
-Tested up to: 3.0.1
+Tested up to: 3.3.1
 Stable tag: trunk
 
 A simple widget that displays only the most recent tweet from multiple accounts.
@@ -27,6 +27,7 @@ from each user. So that's what this plugin does. It will also pull in search res
 1.3.1	Updated to support 3.0
 1.3.2	Using 2.8 deprecated tags due to lack of documentation
 1.3.3	Added in Option to enable/disable dates, cleaned up logic
+1.4.0	Built in better cache handling, added options for credits and styles 
 
 == Installation ==
 

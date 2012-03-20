@@ -4,7 +4,7 @@ Plugin Name: Multi Twitter Stream
 Plugin URI: http://thinkclay.com/
 Description: A widget for multiple twitter accounts
 Author: Clayton McIlrath
-Version: 1.3.3
+Version: 1.4.0
 Author URI: http://thinkclay.com
 */
  
@@ -100,60 +100,95 @@ function TimeAgo($datefrom,$dateto=-1){
 
 
 
-function formatTweet($tweet, $options) {
-	if($options['reply']){
+function formatTweet($tweet, $options) 
+{
+	if ( $options['reply'] )
 	    $tweet = preg_replace('/(^|\s)@(\w+)/', '\1@<a href="http://www.twitter.com/\2">\2</a>', $tweet);
-	}
-	if($options['hash']){
+	
+	if ( $options['hash'] )
 	    $tweet = preg_replace('/(^|\s)#(\w+)/', '\1#<a href="http://search.twitter.com/search?q=%23\2">\2</a>', $tweet);
-	}
 	
 	return $tweet;
 }
 
 	
-function feedSort($a, $b){
-	if($a->status->created_at){
+function feedSort ($a, $b)
+{
+	if ( $a->status->created_at )
+	{
 		$a_t = strtotime($a->status->created_at);
 		$b_t = strtotime($b->status->created_at);
 	}
-	elseif($a->updated){
+	else if ( $a->updated ) 
+	{
 		$a_t = strtotime($a->updated);
 		$b_t = strtotime($b->updated);
 	}
 	
-	if( $a_t == $b_t ) return 0 ;
+	if ( $a_t == $b_t ) 
+		return 0 ;
+
     return ($a_t > $b_t ) ? -1 : 1; 
 }
 
-function multiTwitter($widget) {
+function multiTwitter($widget) 
+{
+	// Create our HTML output var to return
+	$output = ''; 
+	
+	// Get our root upload directory and create cache if necessary
 	$upload = wp_upload_dir();
-	$upload_dir = $upload['basedir']."/cache/twitter";
-	if(!file_exists($upload_dir)){ echo $upload_dir; mkdir($upload_dir); }
+	$upload_dir = $upload['basedir']."/cache";
+	
+	if ( ! file_exists($upload_dir) )
+	{
+		if ( ! mkdir($upload_dir) )
+		{
+			$output .= '<span style="color: red;">could not create dir'.$upload_dir.' please create this directory</span>';
+
+			return $output;
+		}
+	}
+	
 	$accounts = explode(" ", $widget['users']);
 	$terms = explode(", ", $widget['terms']);
 	
-	if(!$widget['user_limit']){ $widget['user_limit'] = 5; } // if limit hasn't been set, default to 10
-	if(!$widget['term_limit']){ $widget['term_limit'] = 5; } // if limit hasn't been set, default to 10
+	if ( ! $widget['user_limit'] )
+	{
+		$widget['user_limit'] = 5; 
+	} 
 	
-	echo '<ul>';
+	if ( ! $widget['term_limit'] )
+	{ 
+		$widget['term_limit'] = 5; 
+	} 
+	
+	$output .= '<ul>';
 		
 	// Parse the accounts and CRUD cache
-	foreach($accounts as $account):
-		$cache = FALSE; // Assume the cache is empty
+	foreach ( $accounts as $account )
+	{
+		$cache = false; // Assume the cache is empty
 		$cFile = "$upload_dir/users_$account.xml";
 	
-		if(file_exists($cFile)) {
+		if ( file_exists($cFile) ) 
+		{
 			$modtime = filemtime($cFile);		
 			$timeago = time() - 1800; // 30 minutes ago
-			if($modtime < $timeago) {
-				$cache = FALSE; // Set to false just in case as the cache needs to be renewed
-			} else {
-				$cache = TRUE; // The cache is not too old so the cache can be used.
+			if ( $modtime < $timeago )
+			{
+				// Set to false just in case as the cache needs to be renewed
+				$cache = false; 
+			} 
+			else 
+			{
+				// The cache is not too old so the cache can be used.
+				$cache = true; 
 			}
 		}
 		
-		if($cache === FALSE) {				
+		if ( $cache === false ) 
+		{
 			// curl the account via XML to get the last tweet and user data
 			$ch = curl_init();
 			curl_setopt($ch, CURLOPT_URL, "http://twitter.com/users/$account.xml");
@@ -166,40 +201,56 @@ function multiTwitter($widget) {
 			$xml = new SimpleXMLElement($content);
 			$feeds[] = $xml;
 			
-			if($content === FALSE) {
+			if ( $content === false ) 
+			{
 				// Content couldn't be retrieved... Do something..
-				echo '<li>Content could not be retrieved. Twitter API failed...</li>';
+				$output .= '<li style="color: red;">Content could not be retrieved. Twitter API failed...</li>';
 			}
 		
-			// Let's save our data into uploads/cache/twitter/
+			// Let's save our data into uploads/cache/
 			$fp = fopen($cFile, 'w');
-			if(!$fp){ echo "Permission to write cache dir to <em>$cFile</em> not granted<br />"; }
-			else { fwrite($fp, $content); }
+			if ( ! $fp )
+			{
+				$output .= '<li style="color: red;">Permission to write cache dir to <em>'.$cFile.'</em> not granted</li>';
+			}
+			else 
+			{
+				fwrite($fp, $content);
+			}
 			fclose($fp);
-		} else {
-			//cache is TRUE let's load the data from the cached file
-			echo '<!--li>We have cache! Loading from local file...</li-->';
+		} 
+		else
+		{
+			//cache is true let's load the data from the cached file
 			$xml = simplexml_load_file($cFile);
 			$feeds[] = $xml;
 		}
-	endforeach;
+	}
 	
 	// Parse the terms and CRUD cache
-	foreach($terms as $term):
-		$cache = FALSE; // Assume the cache is empty
+	foreach ( $terms as $term )
+	{
+		$cache = false; // Assume the cache is empty
 		$cFile = "$upload_dir/term_$term.xml";
 	
-		if(file_exists($cFile)) {
-			$modtime = filemtime($cFile);		
+		if ( file_exists($cFile) )
+		{
+			$modtime = filemtime($cFile);
 			$timeago = time() - 1800; // 30 minutes ago
-			if($modtime < $timeago) {
-				$cache = FALSE; // Set to false just in case as the cache needs to be renewed
-			} else {
-				$cache = TRUE; // The cache is not too old so the cache can be used.
+			if ( $modtime < $timeago )
+			{
+				// Set to false just in case as the cache needs to be renewed
+				$cache = false; 
+			}
+			else
+			{
+				// The cache is not too old so the cache can be used.
+				$cache = true; 
 			}
 		}
 		
-		if($cache === FALSE) {				
+		if ($cache === false) 
+		{				
 			// curl the account via XML to get the last tweet and user data
 			$ch = curl_init();
 			curl_setopt($ch, CURLOPT_URL, "http://search.twitter.com/search.atom?q=$term");
@@ -212,81 +263,126 @@ function multiTwitter($widget) {
 			$xml = new SimpleXMLElement($content);
 			$feeds[] = $xml;
 			
-			if($content === FALSE) {
+			if ( $content === false )
+			{
 				// Content couldn't be retrieved... Do something..
-				echo '<li>Content could not be retrieved. Twitter API failed...</li>';
+				$output .= '<li>Content could not be retrieved. Twitter API failed...</li>';
 			}
-			else {
+			else 
+			{
 				// Let's save our data into uploads/cache/twitter/
 				$fp = fopen($cFile, 'w');
-				if(!$fp){ echo "Permission to write cache dir to <em>$cFile</em> not granted<br />"; } 
-				else { fwrite($fp, $content); }
+				if ( ! $fp )
+				{
+					 $output .= '<li style="color: red;">Permission to write cache dir to <em>'.$cFile.'</em> not granted</li>';
+				} 
+				else 
+				{ 
+					fwrite($fp, $content); 
+				}
 				fclose($fp);
 			}
-		} else {
-			//cache is TRUE let's load the data from the cached file
-			echo '<!--li>We have cache! Loading from local file...</li-->';
+		} 
+		else 
+		{
+			//cache is true let's load the data from the cached file
 			$xml = simplexml_load_file($cFile);
 			$feeds[] = $xml;
 		}
-	endforeach;
+	}
 	
 	// Sort our $feeds array
 	usort($feeds, "feedSort");
 	
 	// Split array and output results
 	$i = 1;
-	foreach($feeds as $feed):
-	if($feed->screen_name != '' && $i <= $widget['user_limit']):
-		echo '
-			<li class="clearfix">
-				<a href="http://twitter.com/'.$feed->screen_name.'">
-					<img class="twitter-avatar" src="'.$feed->profile_image_url.'" width="40" height="40" alt="'.$feed->screen_name.'" />
-					'.$feed->screen_name.': 
-				</a>
-				'.formatTweet($feed->status->text, $widget).'<br />
-				<em>'.TimeAgo(strtotime($feed->status->created_at)).'</em>';
-				if($widget['date']){ echo '<em>'.TimeAgo(strtotime($feed->entry[$i]->updated)).'</em>'; }
-			echo '</li>';
-	elseif(preg_match('/search.twitter.com/i', $feed->id) && $i <= $widget['term_limit']):		
-		$count = count($feed->entry);
-		
-		for($i=0; $i<$count; $i++){
-		if($i <= $widget['term_limit']):
-			echo '
-				<li class="clearfix">
-					<a href="'.$feed->entry[$i]->author->uri.'">
-						<img class="twitter-avatar" src="'.$feed->entry[$i]->link[1]->attributes()->href.'" width="40" height="40" alt="'.$feed->entry[$i]->author->name.'" />
-						<strong>'.$feed->entry[$i]->author->name.':</strong>
-					</a>
-					'.formatTweet($feed->entry[$i]->content, $widget).'<br />
-				';
-			if($widget['date']){ echo '<em>'.TimeAgo(strtotime($feed->entry[$i]->updated)).'</em>'; }
-			echo '</li>';
-		endif;	
+	
+	foreach ( $feeds as $feed )
+	{
+		if ( $feed->screen_name != '' && $i <= $widget['user_limit'] )
+		{
+			$output .= 
+				'<li class="clearfix">'.
+					'<a href="http://twitter.com/'.$feed->screen_name.'">'.
+						'<img class="twitter-avatar" src="'.$feed->profile_image_url.'" width="40" height="40" alt="'.$feed->screen_name.'" />'.
+						$feed->screen_name.': </a>'.formatTweet($feed->status->text, $widget).'<br />';
+						
+			if ( $widget['date'] )
+			{ 
+				$output .= '<em>'.TimeAgo(strtotime($feed->entry[$i]->updated)).'</em>'; 
+			}
+			
+			$output .= '</li>';
 		}
-	endif;	
-	$i++;
-	endforeach;
-	echo '</ul>';
+		else if ( preg_match('/search.twitter.com/i', $feed->id) && $i <= $widget['term_limit'] )
+		{
+			$count = count($feed->entry);
+			
+			for ( $i=0; $i<$count; $i++ )
+			{
+				if ( $i <= $widget['term_limit'] )
+				{
+					$output .= 
+						'<li class="clearfix">'.
+							'<a href="'.$feed->entry[$i]->author->uri.'">'.
+								'<img class="twitter-avatar" '.
+									'src="'.$feed->entry[$i]->link[1]->attributes()->href.'" '.
+									'width="40" height="40" '.
+									'alt="'.$feed->entry[$i]->author->name.'" />'.
+								'<strong>'.$feed->entry[$i]->author->name.':</strong>'.
+							'</a>'.
+							formatTweet($feed->entry[$i]->content, $widget).
+							'<br />';
+							
+					if ( $widget['date'] )
+					{ 
+						$output .= '<em>'.TimeAgo(strtotime($feed->entry[$i]->updated)).'</em>'; 
+					}
+					$output .= '</li>';
+				}	
+			}
+		}	
+		$i++;
+	}
+	
+	$output .= '</ul>';
+	
+	if ( $widget['credits'] === true )
+	{
+		$output .= '<hr /><strong>powered by</strong> <a href="http://incbrite.com" target="_blank">Incbrite Wordpress Plugins</a>';
+	}
+	
+	if ( $widget['styles'] === true )
+	{
+		$output .= 
+			'<style type="text/css">'.
+			'.twitter-avatar { clear: both; float: left; padding: 6px 12px 2px 0; }'.
+			'</style>';
+	}	
+	
+	echo $output;
 }
 
-function widget_multiTwitter($args) {
+function widget_multiTwitter($args) 
+{
 	extract($args);
 
 	$options = get_option("widget_multiTwitter");
 	
-	if (!is_array($options)) { 
+	if ( ! is_array($options)) 
+	{	 
 		$options = array(
-			'title' => 'Multi Twitter',
-			'users' => 'thinkclay bychosen',
-			'terms' => 'wordpress',
-			'user_limit' => 5,
-			'term_limit' => 5,
-			'links' => TRUE,
-			'reply' => TRUE,
-			'hash'	=> TRUE,
-			'date'	=> TRUE
+			'title' 		=> 'Multi Twitter',
+			'users' 		=> 'arraecreative incbrite thinkclay',
+			'terms' 		=> 'wordpress',
+			'user_limit' 	=> 5,
+			'term_limit' 	=> 5,
+			'links' 		=> true,
+			'reply' 		=> true,
+			'hash'			=> true,
+			'date'			=> true,
+			'credits'		=> true,
+			'styles'		=> true
 		);  
 	}  
 
@@ -300,33 +396,42 @@ function widget_multiTwitter($args) {
 	echo $after_widget;
 }
 
-function multiTwitter_control() {
+function multiTwitter_control() 
+{
 	$options = get_option("widget_multiTwitter");
 	
-	if (!is_array($options)) { 
+	if ( ! is_array($options)) 
+	{ 
 		$options = array(
-			'title' => 'Multi Twitter',
-			'users' => 'thinkclay bychosen',
-			'terms' => 'wordpress',
-			'user_limit' => 5,
-			'term_limit' => 5,
-			'links' => TRUE,
-			'reply' => TRUE,
-			'hash'	=> TRUE,
-			'date'	=> TRUE
+			'title' 		=> 'Multi Twitter',
+			'users' 		=> 'thinkclay bychosen',
+			'terms' 		=> 'wordpress',
+			'user_limit' 	=> 5,
+			'term_limit' 	=> 5,
+			'links' 		=> true,
+			'reply'			=> true,
+			'hash'			=> true,
+			'date'			=> true,
+			'credits'		=> true,
+			'styles'		=> true
 		); 
 	}  
 
-	if ($_POST['multiTwitter-Submit']) {
+	if ( $_POST['multiTwitter-Submit'] ) 
+	{
 		$options['title'] = htmlspecialchars($_POST['multiTwitter-Title']);
 		$options['users'] = htmlspecialchars($_POST['multiTwitter-Users']);
 		$options['terms'] = htmlspecialchars($_POST['multiTwitter-Terms']);
 		$options['user_limit'] = $_POST['multiTwitter-UserLimit'];
 		$options['term_limit'] = $_POST['multiTwitter-TermLimit'];
-		$options['links'] = $_POST['multiTwitter-Links'];
-		$options['reply'] = $_POST['multiTwitter-Reply'];
-		$options['hash']  = $_POST['multiTwitter-Hash'];
-		$options['date']  = $_POST['multiTwitter-Date'];
+		
+		$options['hash']	= ($_POST['multiTwitter-Hash']) ? true : false;
+		$options['reply']	= ($_POST['multiTwitter-Reply']) ? true : false;
+		$options['links']	= ($_POST['multiTwitter-Links']) ? true : false;
+		$options['date']	= ($_POST['multiTwitter-Date']) ? true : false;
+		$options['credits']	= ($_POST['multiTwitter-Credits']) ? true : false;
+		$options['styles']	= ($_POST['multiTwitter-Styles']) ? true : false;
+		
 		update_option("widget_multiTwitter", $options);
 	}
 ?>
@@ -378,19 +483,27 @@ function multiTwitter_control() {
 	</p>
 	<p>
 		<label for="multiTwitter-Links">Automatically convert links?</label>
-		<input type="checkbox" name="multiTwitter-Links" id="multiTwitter-Links" <?php if($options['links']){ echo 'checked="checked"'; } ?> />
+		<input type="checkbox" name="multiTwitter-Links" id="multiTwitter-Links" <?php if ($options['links']) echo 'checked="checked"'; ?> />
 	</p>
 	<p>
 		<label for="multiTwitter-Reply">Automatically convert @replies?</label>
-		<input type="checkbox" name="multiTwitter-Reply" id="multiTwitter-Reply" <?php if($options['reply']){ echo 'checked="checked"'; } ?> />
+		<input type="checkbox" name="multiTwitter-Reply" id="multiTwitter-Reply" <?php if ($options['reply']) echo 'checked="checked"'; ?> />
 	</p>
 	<p>
 		<label for="multiTwitter-Hash">Automatically convert #hashtags?</label>
-		<input type="checkbox" name="multiTwitter-Hash" id="multiTwitter-Hash" <?php if($options['hash']){ echo 'checked="checked"'; } ?> />
+		<input type="checkbox" name="multiTwitter-Hash" id="multiTwitter-Hash" <?php if ($options['hash']) echo 'checked="checked"'; ?> />
 	</p>
 	<p>
 		<label for="multiTwitter-Date">Show Date?</label>
-		<input type="checkbox" name="multiTwitter-Date" id="multiTwitter-Date" <?php if($options['date']){ echo 'checked="checked"'; } ?> />
+		<input type="checkbox" name="multiTwitter-Date" id="multiTwitter-Date" <?php if ($options['date']) echo 'checked="checked"'; ?> />
+	</p>
+	<p>
+		<label for="multiTwitter-Credits">Show Credits?</label>
+		<input type="checkbox" name="multiTwitter-Credits" id="multiTwitter-Credits" <?php if ($options['credits']) echo 'checked="checked"'; ?> />
+	</p>
+	<p>
+		<label for="multiTwitter-Styles">Use Default Styles?</label>
+		<input type="checkbox" name="multiTwitter-Styles" id="multiTwitter-Styles" <?php if ($options['styles']) echo 'checked="checked"'; ?> />
 	</p>
 	<p><input type="hidden" id="multiTwitter-Submit" name="multiTwitter-Submit" value="1" /></p>
 <?php
