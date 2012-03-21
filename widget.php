@@ -1,10 +1,10 @@
 <?php
 /*
 Plugin Name: Multi Twitter Stream
-Plugin URI: http://thinkclay.com/
+Plugin URI: http://incbrite.com/
 Description: A widget for multiple twitter accounts
 Author: Clayton McIlrath
-Version: 1.4.1
+Version: 1.4.2
 Author URI: http://thinkclay.com
 */
  
@@ -13,41 +13,63 @@ TODO:
 - Link hyperlinks in formatTwitter()
 - Options for order arrangement (chrono, alpha, etc)
 */
-function TimeAgo($datefrom,$dateto=-1){
+function human_time($datefrom, $dateto = -1)
+{
 	// Defaults and assume if 0 is passed in that its an error rather than the epoch
-	if($datefrom<=0) { return "A long time ago"; }
-	if($dateto==-1) { $dateto = time(); }
+	if ( $datefrom <= 0 )
+		return "A long time ago";
+		
+	if ( $dateto == -1) { 
+		$dateto = time(); 
+	}
 	
 	// Calculate the difference in seconds betweeen the two timestamps
 	$difference = $dateto - $datefrom;
 	
 	// If difference is less than 60 seconds use 'seconds'
-	if($difference < 60){ $interval = "s"; }
-	
+	if ( $difference < 60 )
+	{ 
+		$interval = "s"; 
+	}
 	// If difference is between 60 seconds and 60 minutes use 'minutes'
-	elseif($difference >= 60 && $difference<60*60){ $interval = "n"; }
-	
+	else if ( $difference >= 60 AND $difference < (60*60) )
+	{
+		$interval = "n"; 
+	}
 	// If difference is between 1 hour and 24 hours use 'hours'
-	elseif($difference >= 60*60 && $difference<60*60*24){ $interval = "h"; }
-	
+	else if ( $difference >= (60*60) AND $difference < (60*60*24) )
+	{
+		$interval = "h"; 
+	}
 	// If difference is between 1 day and 7 days use 'days'
-	elseif($difference >= 60*60*24 && $difference<60*60*24*7){ $interval = "d"; }
-	
+	else if ( $difference >= (60*60*24) AND $difference < (60*60*24*7) )
+	{
+		$interval = "d"; 
+	}
 	// If difference is between 1 week and 30 days use 'weeks'
-	elseif($difference >= 60*60*24*7 && $difference < 60*60*24*30){ $interval = "ww"; }
-	
+	else if ( $difference >= (60*60*24*7) AND $difference < (60*60*24*30) )
+	{
+		$interval = "ww";
+	}
 	// If difference is between 30 days and 365 days use 'months'
-	elseif($difference >= 60*60*24*30 && $difference < 60*60*24*365){ $interval = "m"; }
-	
+	else if ( $difference >= (60*60*24*30) AND $difference < (60*60*24*365) )
+	{
+		$interval = "m"; 
+	}
 	// If difference is greater than or equal to 365 days use 'years'
-	elseif($difference >= 60*60*24*365){ $interval = "y"; }
+	else if ( $difference >= (60*60*24*365) )
+	{
+		$interval = "y"; 
+	}
 	
 	// Based on the interval, determine the number of units between the two dates
 	// If the $datediff returned is 1, be sure to return the singular
 	// of the unit, e.g. 'day' rather 'days'
-	switch($interval){
-		case "m":
+	switch ($interval)
+	{
+		case "m" :
 			$months_difference = floor($difference / 60 / 60 / 24 / 29);
+			
 			while(
 				mktime(date("H", $datefrom), date("i", $datefrom),
 				date("s", $datefrom), date("n", $datefrom)+($months_difference),
@@ -59,48 +81,58 @@ function TimeAgo($datefrom,$dateto=-1){
 	
 			// We need this in here because it is possible to have an 'm' interval and a months
 			// difference of 12 because we are using 29 days in a month
-			if($datediff==12){ $datediff--; }
+			if ( $datediff == 12 )
+			{ 
+				$datediff--; 
+			}
 	
 			$res = ($datediff==1) ? "$datediff month ago" : "$datediff months ago";
-		break;
+			
+			break;
 	
-		case "y":
+		case "y" :
 			$datediff = floor($difference / 60 / 60 / 24 / 365);
 			$res = ($datediff==1) ? "$datediff year ago" : "$datediff years ago";
-		break;
+
+			break;
 	
-		case "d":
+		case "d" :
 			$datediff = floor($difference / 60 / 60 / 24);
 			$res = ($datediff==1) ? "$datediff day ago" : "$datediff days ago";
-		break;
+			
+			break;
 	
-		case "ww":
+		case "ww" :
 			$datediff = floor($difference / 60 / 60 / 24 / 7);
 			$res = ($datediff==1) ? "$datediff week ago" : "$datediff weeks ago";
-		break;
+
+			break;
 	
-		case "h":
+		case "h" :
 			$datediff = floor($difference / 60 / 60);
 			$res = ($datediff==1) ? "$datediff hour ago" : "$datediff hours ago";
-		break;
+
+			break;
 	
-		case "n":
+		case "n" :
 			$datediff = floor($difference / 60);
 			$res = ($datediff==1) ? "$datediff minute ago" : "$datediff minutes ago";
-		break;
+	
+			break;
 	
 		case "s":
 			$datediff = $difference;
 			$res = ($datediff==1) ? "$datediff second ago" : "$datediff seconds ago";
-		break;
+			
+			break;
 	}
 
 	return $res;
-} // end TimeAgo()
+}
 
 
 
-function formatTweet($tweet, $options) 
+function format_tweet($tweet, $options) 
 {
 	if ( $options['reply'] )
 	    $tweet = preg_replace('/(^|\s)@(\w+)/', '\1@<a href="http://www.twitter.com/\2">\2</a>', $tweet);
@@ -112,7 +144,7 @@ function formatTweet($tweet, $options)
 }
 
 	
-function feedSort ($a, $b)
+function feed_sort($a, $b)
 {
 	if ( $a->status->created_at )
 	{
@@ -131,7 +163,7 @@ function feedSort ($a, $b)
     return ($a_t > $b_t ) ? -1 : 1; 
 }
 
-function multiTwitter($widget) 
+function multi_twitter($widget) 
 {
 	// Create our HTML output var to return
 	$output = ''; 
@@ -249,7 +281,7 @@ function multiTwitter($widget)
 			}
 		}
 		
-		if ($cache === false) 
+		if ( $cache === false ) 
 		{				
 			// curl the account via XML to get the last tweet and user data
 			$ch = curl_init();
@@ -292,29 +324,29 @@ function multiTwitter($widget)
 	}
 	
 	// Sort our $feeds array
-	usort($feeds, "feedSort");
+	usort($feeds, "feed_sort");
 	
 	// Split array and output results
 	$i = 1;
 	
 	foreach ( $feeds as $feed )
 	{
-		if ( $feed->screen_name != '' && $i <= $widget['user_limit'] )
+		if ( $feed->screen_name != '' AND $i <= $widget['user_limit'] )
 		{
 			$output .= 
 				'<li class="clearfix">'.
 					'<a href="http://twitter.com/'.$feed->screen_name.'">'.
 						'<img class="twitter-avatar" src="'.$feed->profile_image_url.'" width="40" height="40" alt="'.$feed->screen_name.'" />'.
-						$feed->screen_name.': </a>'.formatTweet($feed->status->text, $widget).'<br />';
+						$feed->screen_name.': </a>'.format_tweet($feed->status->text, $widget).'<br />';
 						
 			if ( $widget['date'] )
 			{ 
-				$output .= '<em>'.TimeAgo(strtotime($feed->entry[$i]->updated)).'</em>'; 
+				$output .= '<em>'.human_time(strtotime($feed->status->created_at)).'</em>'; 
 			}
 			
 			$output .= '</li>';
 		}
-		else if ( preg_match('/search.twitter.com/i', $feed->id) && $i <= $widget['term_limit'] )
+		else if ( preg_match('/search.twitter.com/i', $feed->id) AND $i <= $widget['term_limit'] )
 		{
 			$count = count($feed->entry);
 			
@@ -331,12 +363,12 @@ function multiTwitter($widget)
 									'alt="'.$feed->entry[$i]->author->name.'" />'.
 								'<strong>'.$feed->entry[$i]->author->name.':</strong>'.
 							'</a>'.
-							formatTweet($feed->entry[$i]->content, $widget).
+							format_tweet($feed->entry[$i]->content, $widget).
 							'<br />';
 							
 					if ( $widget['date'] )
 					{ 
-						$output .= '<em>'.TimeAgo(strtotime($feed->entry[$i]->updated)).'</em>'; 
+						$output .= '<em>'.human_time(strtotime($feed->status->created_at)).'</em>'; 
 					}
 					$output .= '</li>';
 				}	
@@ -366,11 +398,11 @@ function multiTwitter($widget)
 	echo $output;
 }
 
-function widget_multiTwitter($args) 
+function widget_multi_twitter($args) 
 {
 	extract($args);
 
-	$options = get_option("widget_multiTwitter");
+	$options = get_option("widget_multi_twitter");
 	
 	if ( ! is_array($options)) 
 	{	 
@@ -394,14 +426,14 @@ function widget_multiTwitter($args)
     echo $options['title'];
 	echo $after_title;
 
-	multiTwitter($options);
+	multi_twitter($options);
 	
 	echo $after_widget;
 }
 
-function multiTwitter_control() 
+function multi_twitter_control() 
 {
-	$options = get_option("widget_multiTwitter");
+	$options = get_option("widget_multi_twitter");
 	
 	if ( ! is_array($options)) 
 	{ 
@@ -420,41 +452,41 @@ function multiTwitter_control()
 		); 
 	}  
 
-	if ( $_POST['multiTwitter-Submit'] ) 
+	if ( $_POST['multi_twitter-Submit'] ) 
 	{
-		$options['title'] = htmlspecialchars($_POST['multiTwitter-Title']);
-		$options['users'] = htmlspecialchars($_POST['multiTwitter-Users']);
-		$options['terms'] = htmlspecialchars($_POST['multiTwitter-Terms']);
-		$options['user_limit'] = $_POST['multiTwitter-UserLimit'];
-		$options['term_limit'] = $_POST['multiTwitter-TermLimit'];
+		$options['title'] = htmlspecialchars($_POST['multi_twitter-Title']);
+		$options['users'] = htmlspecialchars($_POST['multi_twitter-Users']);
+		$options['terms'] = htmlspecialchars($_POST['multi_twitter-Terms']);
+		$options['user_limit'] = $_POST['multi_twitter-UserLimit'];
+		$options['term_limit'] = $_POST['multi_twitter-TermLimit'];
 		
-		$options['hash']	= ($_POST['multiTwitter-Hash']) ? true : false;
-		$options['reply']	= ($_POST['multiTwitter-Reply']) ? true : false;
-		$options['links']	= ($_POST['multiTwitter-Links']) ? true : false;
-		$options['date']	= ($_POST['multiTwitter-Date']) ? true : false;
-		$options['credits']	= ($_POST['multiTwitter-Credits']) ? true : false;
-		$options['styles']	= ($_POST['multiTwitter-Styles']) ? true : false;
+		$options['hash']	= ($_POST['multi_twitter-Hash']) ? true : false;
+		$options['reply']	= ($_POST['multi_twitter-Reply']) ? true : false;
+		$options['links']	= ($_POST['multi_twitter-Links']) ? true : false;
+		$options['date']	= ($_POST['multi_twitter-Date']) ? true : false;
+		$options['credits']	= ($_POST['multi_twitter-Credits']) ? true : false;
+		$options['styles']	= ($_POST['multi_twitter-Styles']) ? true : false;
 		
-		update_option("widget_multiTwitter", $options);
+		update_option("widget_multi_twitter", $options);
 	}
 ?>
 	<p>
-		<label for="multiTwitter-Title">Widget Title: </label><br />
-		<input type="text" class="widefat" id="multiTwitter-Title" name="multiTwitter-Title" value="<?php echo $options['title']; ?>" />
+		<label for="multi_twitter-Title">Widget Title: </label><br />
+		<input type="text" class="widefat" id="multi_twitter-Title" name="multi_twitter-Title" value="<?php echo $options['title']; ?>" />
 	</p>
 	<p>	
-		<label for="multiTwitter-Users">Users: </label><br />
-		<input type="text" class="widefat" id="multiTwitter-Users" name="multiTwitter-Users" value="<?php echo $options['users']; ?>" /><br />
+		<label for="multi_twitter-Users">Users: </label><br />
+		<input type="text" class="widefat" id="multi_twitter-Users" name="multi_twitter-Users" value="<?php echo $options['users']; ?>" /><br />
 		<small><em>enter accounts separated with a space</em></small>
 	</p>
 	<p>
-		<label for="multiTwitter-Terms">Search Terms: </label><br />
-		<input type="text" class="widefat" id="multiTwitter-Terms" name="multiTwitter-Terms" value="<?php echo $options['terms']; ?>" /><br />
+		<label for="multi_twitter-Terms">Search Terms: </label><br />
+		<input type="text" class="widefat" id="multi_twitter-Terms" name="multi_twitter-Terms" value="<?php echo $options['terms']; ?>" /><br />
 		<small><em>enter search terms separated with a comma</em></small>
 	</p>
 	<p>
-		<label for="multiTwitter-UserLimit">Limit user feed to: </label>
-		<select id="multiTwitter-UserLimit" name="multiTwitter-UserLimit">
+		<label for="multi_twitter-UserLimit">Limit user feed to: </label>
+		<select id="multi_twitter-UserLimit" name="multi_twitter-UserLimit">
 			<option value="<?php echo $options['user_limit']; ?>"><?php echo $options['user_limit']; ?></option>
 			<option value="1">1</option>
 			<option value="2">2</option>
@@ -469,8 +501,8 @@ function multiTwitter_control()
 		</select>
 	</p>
 	<p>
-		<label for="multiTwitter-TermLimit">Limit search feed to: </label>
-		<select id="multiTwitter-TermLimit" name="multiTwitter-TermLimit">
+		<label for="multi_twitter-TermLimit">Limit search feed to: </label>
+		<select id="multi_twitter-TermLimit" name="multi_twitter-TermLimit">
 			<option value="<?php echo $options['term_limit']; ?>"><?php echo $options['term_limit']; ?></option>
 			<option value="1">1</option>
 			<option value="2">2</option>
@@ -485,37 +517,38 @@ function multiTwitter_control()
 		</select>
 	</p>
 	<p>
-		<label for="multiTwitter-Links">Automatically convert links?</label>
-		<input type="checkbox" name="multiTwitter-Links" id="multiTwitter-Links" <?php if ($options['links']) echo 'checked="checked"'; ?> />
+		<label for="multi_twitter-Links">Automatically convert links?</label>
+		<input type="checkbox" name="multi_twitter-Links" id="multi_twitter-Links" <?php if ($options['links']) echo 'checked="checked"'; ?> />
 	</p>
 	<p>
-		<label for="multiTwitter-Reply">Automatically convert @replies?</label>
-		<input type="checkbox" name="multiTwitter-Reply" id="multiTwitter-Reply" <?php if ($options['reply']) echo 'checked="checked"'; ?> />
+		<label for="multi_twitter-Reply">Automatically convert @replies?</label>
+		<input type="checkbox" name="multi_twitter-Reply" id="multi_twitter-Reply" <?php if ($options['reply']) echo 'checked="checked"'; ?> />
 	</p>
 	<p>
-		<label for="multiTwitter-Hash">Automatically convert #hashtags?</label>
-		<input type="checkbox" name="multiTwitter-Hash" id="multiTwitter-Hash" <?php if ($options['hash']) echo 'checked="checked"'; ?> />
+		<label for="multi_twitter-Hash">Automatically convert #hashtags?</label>
+		<input type="checkbox" name="multi_twitter-Hash" id="multi_twitter-Hash" <?php if ($options['hash']) echo 'checked="checked"'; ?> />
 	</p>
 	<p>
-		<label for="multiTwitter-Date">Show Date?</label>
-		<input type="checkbox" name="multiTwitter-Date" id="multiTwitter-Date" <?php if ($options['date']) echo 'checked="checked"'; ?> />
+		<label for="multi_twitter-Date">Show Date?</label>
+		<input type="checkbox" name="multi_twitter-Date" id="multi_twitter-Date" <?php if ($options['date']) echo 'checked="checked"'; ?> />
 	</p>
 	<p>
-		<label for="multiTwitter-Credits">Show Credits?</label>
-		<input type="checkbox" name="multiTwitter-Credits" id="multiTwitter-Credits" <?php if ($options['credits']) echo 'checked="checked"'; ?> />
+		<label for="multi_twitter-Credits">Show Credits?</label>
+		<input type="checkbox" name="multi_twitter-Credits" id="multi_twitter-Credits" <?php if ($options['credits']) echo 'checked="checked"'; ?> />
 	</p>
 	<p>
-		<label for="multiTwitter-Styles">Use Default Styles?</label>
-		<input type="checkbox" name="multiTwitter-Styles" id="multiTwitter-Styles" <?php if ($options['styles']) echo 'checked="checked"'; ?> />
+		<label for="multi_twitter-Styles">Use Default Styles?</label>
+		<input type="checkbox" name="multi_twitter-Styles" id="multi_twitter-Styles" <?php if ($options['styles']) echo 'checked="checked"'; ?> />
 	</p>
-	<p><input type="hidden" id="multiTwitter-Submit" name="multiTwitter-Submit" value="1" /></p>
+	<p><input type="hidden" id="multi_twitter-Submit" name="multi_twitter-Submit" value="1" /></p>
 <?php
 }
 
-function multiTwitter_init() {
-	register_sidebar_widget('Multi Twitter', 'widget_multiTwitter');
-	register_widget_control('Multi Twitter', 'multiTwitter_control', 250, 250);	
+function multi_twitter_init() 
+{
+	register_sidebar_widget('Multi Twitter', 'widget_multi_twitter');
+	register_widget_control('Multi Twitter', 'multi_twitter_control', 250, 250);	
 }
 
-add_action("plugins_loaded", "multiTwitter_init");
+add_action("plugins_loaded", "multi_twitter_init");
 ?>

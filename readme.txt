@@ -17,19 +17,21 @@ from each user. So that's what this plugin does. It will also pull in search res
 
 
 ## CHANGELOG
-- 1.0.1	Re-arranged files get plugin working properly
-- 1.1.0	Added chronological sorting for feeds
-- 1.2.0	Added option on widget to limit feed
-- 1.2.5	Added options in the widget settings to link #hashtags and @replies.
-- 1.3.0	Added options for search terms in addition to accounts
-- 1.3.1	Updated to support 3.0
-- 1.3.2	Using 2.8 deprecated tags due to lack of documentation
-- 1.3.3	Added in Option to enable/disable dates, cleaned up logic
-- 1.4.0	Built in better cache handling, added options for credits and styles 
+- 1.4.2 Code cleanup
 - 1.4.1 Updating docs and links
+- 1.4.0	Built in better cache handling, added options for credits and styles 
+- 1.3.3	Added in Option to enable/disable dates, cleaned up logic
+- 1.3.2	Using 2.8 deprecated tags due to lack of documentation
+- 1.3.1	Updated to support 3.0
+- 1.3.0	Added options for search terms in addition to accounts
+- 1.2.5	Added options in the widget settings to link #hashtags and @replies.
+- 1.2.0	Added option on widget to limit feed
+- 1.1.0	Added chronological sorting for feeds
+- 1.0.1	Re-arranged files get plugin working properly
+
 
 == Installation ==
-Estimated Time: 5 minutes
+Estimated Time: 10 minutes
 
 1. Upload the 'widget-twitter' folder to the /wp-content/plugins/ folder on your site
 2. In WP-Admin, you should see 'Multi Twitter Widget' listed as an inactive plugin. Click the link to activate it. 
