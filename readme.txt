@@ -1,6 +1,6 @@
 === Plugin Name ===
 Contributors: clay.mcilrath
-Donate link: http://thinkclay.com/
+Donate link: http://incbrite.com/
 Tags: widgets, twitter, multi twitter, multiple twitter, twitter account
 Requires at least: 2.8
 Tested up to: 3.3.1
@@ -17,6 +17,7 @@ from each user. So that's what this plugin does. It will also pull in search res
 
 
 ## CHANGELOG
+- 1.4.3 Fixing the auto link conversion thanks to Roger
 - 1.4.2 Code cleanup
 - 1.4.1 Updating docs and links
 - 1.4.0	Built in better cache handling, added options for credits and styles 

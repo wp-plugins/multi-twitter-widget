@@ -4,13 +4,12 @@ Plugin Name: Multi Twitter Stream
 Plugin URI: http://incbrite.com/
 Description: A widget for multiple twitter accounts
 Author: Clayton McIlrath
-Version: 1.4.2
+Version: 1.4.3
 Author URI: http://thinkclay.com
 */
  
 /*
 TODO:
-- Link hyperlinks in formatTwitter()
 - Options for order arrangement (chrono, alpha, etc)
 */
 function human_time($datefrom, $dateto = -1)
@@ -139,6 +138,9 @@ function format_tweet($tweet, $options)
 	
 	if ( $options['hash'] )
 	    $tweet = preg_replace('/(^|\s)#(\w+)/', '\1#<a href="http://search.twitter.com/search?q=%23\2">\2</a>', $tweet);
+	
+	if( $options['links'] )
+		$tweet = preg_replace('#(^|[\n ])(([\w]+?://[\w\#$%&~.\-;:=,?@\[\]+]*)(/[\w\#$%&~/.\-;:=,?@\[\]+]*)?)#is', '\\1\\2', $tweet);
 	
 	return $tweet;
 }
