@@ -1,5 +1,5 @@
 === Plugin Name ===
-Contributors: clay.mcilrath
+Contributors: clay.mcilrath, 
 Donate link: http://incbrite.com/
 Tags: widgets, twitter, multi twitter, multiple twitter, twitter account
 Requires at least: 2.8
@@ -17,6 +17,7 @@ from each user. So that's what this plugin does. It will also pull in search res
 
 
 ## CHANGELOG
+- 1.5.0 Roger did an overhaul on the plugin supporting oath and other more modern conventions
 - 1.4.3 Fixing the auto link conversion thanks to Roger
 - 1.4.2 Code cleanup
 - 1.4.1 Updating docs and links
@@ -37,4 +38,5 @@ Estimated Time: 10 minutes
 1. Upload the 'widget-twitter' folder to the /wp-content/plugins/ folder on your site
 2. In WP-Admin, you should see 'Multi Twitter Widget' listed as an inactive plugin. Click the link to activate it. 
 3. Once activated, go to Appearance > Widgets and Drop the Widget into your preferred sidebar
-4. Once you've dropped in the widget, enter twitter handles (space separated) and click save. 
+4. You will need oauth credentials for twitter, which means you'll have to create an app on https://dev.twitter.com/apps to get these credentials. Defaults have been provided, but there is no guarantee they will work long term.
+5. Once you've dropped in the widget, enter twitter handles (space separated) and click save. 
