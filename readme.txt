@@ -1,9 +1,9 @@
 === Plugin Name ===
-Contributors: clay.mcilrath, 
-Donate link: http://incbrite.com/
+Contributors: clay.mcilrath, roger_hamilton
+Donate link: http://bitly.com/111ya6n
 Tags: widgets, twitter, multi twitter, multiple twitter, twitter account
 Requires at least: 2.8
-Tested up to: 3.3.1
+Tested up to: 3.5.1
 Stable tag: trunk
 
 A simple widget that displays only the most recent tweet from multiple accounts.
@@ -15,6 +15,7 @@ usually show the tweets of the users in chronological order. This means if USER_
 your whole feed might be all about USER_A. I found in many cases that I'd rather pull in the most recent tweet
 from each user. So that's what this plugin does. It will also pull in search results and hashtags
 
+Another fork exists here: https://github.com/msenateatplos/multi-twitter-widget/blob/master/widget.php
 
 ## CHANGELOG
 - 1.5.0 Roger did an overhaul on the plugin supporting oath and other more modern conventions
